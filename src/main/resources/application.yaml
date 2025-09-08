@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: blog
+  jpa:
+    hibernate:
+      ddl-auto: none
+  datasource:
+    master:
+      url: jdbc:postgresql://localhost:6000/blog?createDatabaseIfNotExist=true
+      username: ${MASTER_DB_USER:postgres}
+      password: ${MASTER_DB_PASSWORD:root}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        schema: blog
+        auto-commit: false
+        maximum-pool-size: 10
+    replica1:
+      url: jdbc:postgresql://localhost:6001/blog?createDatabaseIfNotExist=true
+      username: ${MASTER_DB_USER:postgres}
+      password: ${MASTER_DB_PASSWORD:root}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        schema: blog
+        auto-commit: false
+        maximum-pool-size: 10
+  liquibase:
+    liquibase-schema: blog
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: blog
+logging:
+  level:
+    sql: debug
+    org.hibernate.orm.jdbc.bind: trace

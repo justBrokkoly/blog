@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:18rc1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+    ports:
+      - 6000:5432
+    command: postgres
+    shm_size: 1g
+
+  postgres-replica:
+    image: postgres:18rc1
+    shm_size: 1g
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: replicator_password
+      PGHOST: postgres
+    command: |
+      bash -c "
+      PGUSER=postgres PGPASSWORD=root psql -c \"CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'replicator_password';\";  
+      PGUSER=postgres PGPASSWORD=root psql -c \"SELECT pg_create_physical_replication_slot('replication_slot');\";  
+      rm -rf /var/lib/postgresql/data && pg_basebackup --pgdata=/var/lib/postgresql/18/docker -R --slot=replication_slot; 
+      chown -R postgres:postgres /var/lib/postgresql/* && chmod 0700 /var/lib/postgresql/*; 
+      su postgres -c postgres; 
+      "
+    depends_on:
+      - postgres
+    restart: always
+    ports:
+      - 6001:5432
+
+
